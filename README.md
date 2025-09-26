@@ -107,6 +107,8 @@ The server runs with the following default settings:
 
 ## Usage Examples
 
+### Using MCP Tools
+
 1. **Search for papers on a topic:**
    ```
    search_papers("machine learning", 10)
@@ -122,6 +124,128 @@ The server runs with the following default settings:
 
 4. **View papers on a specific topic:**
    Access the `papers://machine_learning` resource
+
+## Integration Guide
+
+### Using with Claude Desktop
+
+Add this configuration to your Claude Desktop MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "arxiv-research": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-fetch",
+        "https://arxiv-mcp-server-00jv.onrender.com/sse"
+      ]
+    }
+  }
+}
+```
+
+### Using from Custom Applications
+
+#### Python Integration
+
+```python
+from mcp import ClientSession
+from mcp.client.sse import SSEClientTransport
+
+# Connect to your deployed server
+transport = SSEClientTransport("https://arxiv-mcp-server-00jv.onrender.com/sse")
+session = ClientSession(transport)
+
+# Search for papers
+result = await session.call_tool("search_papers", {
+    "topic": "machine learning",
+    "max_results": 5
+})
+
+# Get paper information
+paper_info = await session.call_tool("extract_info", {
+    "paper_id": "2301.12345"
+})
+
+# Access resources
+folders = await session.get_resource("papers://folders")
+topic_papers = await session.get_resource("papers://machine_learning")
+```
+
+#### JavaScript/TypeScript Integration
+
+```javascript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+
+const transport = new SSEClientTransport("https://arxiv-mcp-server-00jv.onrender.com/sse");
+const client = new Client({}, { transport });
+
+// Search for papers
+const searchResult = await client.request({
+  method: "tools/call",
+  params: {
+    name: "search_papers",
+    arguments: { topic: "artificial intelligence", max_results: 3 }
+  }
+});
+
+// Get paper details
+const paperInfo = await client.request({
+  method: "tools/call",
+  params: {
+    name: "extract_info",
+    arguments: { paper_id: "2301.12345" }
+  }
+});
+
+// Access resources
+const folders = await client.request({
+  method: "resources/read",
+  params: { uri: "papers://folders" }
+});
+```
+
+#### Direct HTTP/REST Integration
+
+For languages without MCP client libraries, you can make direct HTTP requests:
+
+```bash
+# Example using curl
+curl -X POST https://arxiv-mcp-server-00jv.onrender.com/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "search_papers",
+    "arguments": {
+      "topic": "quantum computing",
+      "max_results": 5
+    }
+  }'
+```
+
+### Integration Use Cases
+
+- **Research Assistants**: Build AI-powered research tools
+- **Academic Dashboards**: Create web interfaces for paper discovery
+- **Mobile Apps**: Integrate paper search into mobile applications
+- **CLI Tools**: Build command-line research utilities
+- **Web Applications**: Add academic search to existing platforms
+- **Automated Research**: Schedule periodic research updates
+- **Educational Tools**: Create learning platforms with paper integration
+
+### Server Endpoints
+
+- **Primary URL**: `https://arxiv-mcp-server-00jv.onrender.com`
+- **SSE Endpoint**: `https://arxiv-mcp-server-00jv.onrender.com/sse` (for MCP connections)
+- **Health Check**: Server responds with 200 OK on `/sse` endpoint
+
+### Important Notes
+
+- **Free Tier Limitations**: On Render's free tier, the service may sleep after periods of inactivity
+- **Cold Starts**: First request after sleep may take 30-60 seconds to respond
+- **Persistent Storage**: Papers are saved to the server's file system
+- **Rate Limiting**: Consider implementing rate limiting for production use
 
 ## API Integration
 
